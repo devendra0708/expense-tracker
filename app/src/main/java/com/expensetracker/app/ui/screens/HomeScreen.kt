@@ -41,7 +41,9 @@ fun HomeScreen(
     val budgetStatus by viewModel.budgetStatus.collectAsState()
     val selectedMonth by viewModel.selectedMonth.collectAsState()
     val exportMessage by viewModel.exportMessage.collectAsState()
+    val userSettings by viewModel.userSettings.collectAsState()
     val (year, month) = selectedMonth
+    val currencySymbol = userSettings.currency.symbol
 
     val monthExpenses = remember(expenses, year, month) {
         val start = DateUtils.monthStartMillis(year, month)
@@ -102,7 +104,8 @@ fun HomeScreen(
             item {
                 MonthlySpentCard(
                     spent = monthlySpent,
-                    budget = budgetStatus.monthlyBudget
+                    budget = budgetStatus.monthlyBudget,
+                    currencySymbol = currencySymbol
                 )
             }
 
@@ -122,7 +125,8 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             BudgetProgressBar(
                                 spent = budgetStatus.monthlySpent,
-                                budget = monthlyBudget
+                                budget = monthlyBudget,
+                                currencySymbol = currencySymbol
                             )
                         }
                     }
@@ -131,7 +135,7 @@ fun HomeScreen(
 
             if (categoryTotals.isNotEmpty()) {
                 item {
-                    CategoryBreakdownCard(categoryTotals, monthlySpent)
+                    CategoryBreakdownCard(categoryTotals, monthlySpent, currencySymbol)
                 }
             }
 
@@ -152,6 +156,7 @@ fun HomeScreen(
                 items(monthExpenses, key = { it.id }) { expense ->
                     ExpenseCard(
                         expense = expense,
+                        currencySymbol = currencySymbol,
                         onClick = { onEditExpense(expense.id) },
                         onDelete = { viewModel.deleteExpense(expense) }
                     )
@@ -162,7 +167,11 @@ fun HomeScreen(
 }
 
 @Composable
-private fun MonthlySpentCard(spent: Double, budget: Double?) {
+private fun MonthlySpentCard(
+    spent: Double,
+    budget: Double?,
+    currencySymbol: String
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -183,7 +192,7 @@ private fun MonthlySpentCard(spent: Double, budget: Double?) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = formatCurrency(spent),
+                text = formatCurrency(spent, currencySymbol),
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -191,7 +200,7 @@ private fun MonthlySpentCard(spent: Double, budget: Double?) {
             if (budget != null && budget > 0) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Budget: ${formatCurrency(budget)}",
+                    text = "Budget: ${formatCurrency(budget, currencySymbol)}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                 )
@@ -203,7 +212,8 @@ private fun MonthlySpentCard(spent: Double, budget: Double?) {
 @Composable
 private fun CategoryBreakdownCard(
     categoryTotals: List<CategoryTotal>,
-    totalSpent: Double
+    totalSpent: Double,
+    currencySymbol: String
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -218,7 +228,7 @@ private fun CategoryBreakdownCard(
             Spacer(modifier = Modifier.height(12.dp))
             categoryTotals.sortedByDescending { it.total }.forEach { item ->
                 val fraction = if (totalSpent > 0) (item.total / totalSpent).toFloat() else 0f
-                CategoryRow(item, fraction)
+                CategoryRow(item, fraction, currencySymbol)
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
@@ -226,7 +236,11 @@ private fun CategoryBreakdownCard(
 }
 
 @Composable
-private fun CategoryRow(item: CategoryTotal, fraction: Float) {
+private fun CategoryRow(
+    item: CategoryTotal,
+    fraction: Float,
+    currencySymbol: String
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -264,7 +278,7 @@ private fun CategoryRow(item: CategoryTotal, fraction: Float) {
         }
         Spacer(modifier = Modifier.width(12.dp))
         Text(
-            text = formatCurrency(item.total),
+            text = formatCurrency(item.total, currencySymbol),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold
         )
@@ -274,6 +288,7 @@ private fun CategoryRow(item: CategoryTotal, fraction: Float) {
 @Composable
 private fun ExpenseCard(
     expense: Expense,
+    currencySymbol: String,
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -328,7 +343,7 @@ private fun ExpenseCard(
                 )
             }
             Text(
-                text = formatCurrency(expense.amount),
+                text = formatCurrency(expense.amount, currencySymbol),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.error

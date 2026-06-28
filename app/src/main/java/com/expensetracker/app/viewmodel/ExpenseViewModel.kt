@@ -14,6 +14,9 @@ import com.expensetracker.app.data.ExpenseRepository
 import com.expensetracker.app.data.MonthlyTotal
 import com.expensetracker.app.data.RecurringExpense
 import com.expensetracker.app.data.RecurrenceFrequency
+import com.expensetracker.app.data.SupportedCurrency
+import com.expensetracker.app.data.UserSettings
+import com.expensetracker.app.data.UserSettingsRepository
 import com.expensetracker.app.util.CsvExporter
 import com.expensetracker.app.util.DateUtils
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,10 +30,15 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-class ExpenseViewModel(private val repository: ExpenseRepository) : ViewModel() {
+class ExpenseViewModel(
+    private val repository: ExpenseRepository,
+    private val userSettingsRepository: UserSettingsRepository
+) : ViewModel() {
     private val selectedYearMonth = MutableStateFlow(DateUtils.currentYearMonth())
 
     val selectedMonth: StateFlow<Pair<Int, Int>> = selectedYearMonth.asStateFlow()
+
+    val userSettings: StateFlow<UserSettings> = userSettingsRepository.settings
 
     val expenses: StateFlow<List<Expense>> = repository.allExpenses
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -68,9 +76,9 @@ class ExpenseViewModel(private val repository: ExpenseRepository) : ViewModel() 
     val exportMessage: StateFlow<String?> = _exportMessage.asStateFlow()
 
     init {
-        refreshMonthlyChartData()
         viewModelScope.launch {
             repository.processDueRecurringExpenses()
+            refreshMonthlyChartDataInternal()
         }
     }
 
@@ -81,10 +89,14 @@ class ExpenseViewModel(private val repository: ExpenseRepository) : ViewModel() 
 
     fun refreshMonthlyChartData(monthCount: Int = 6) {
         viewModelScope.launch {
-            _monthlyChartData.value = repository.getMonthlyTotalsForLastMonths(
-                DateUtils.lastNMonths(monthCount)
-            )
+            refreshMonthlyChartDataInternal(monthCount)
         }
+    }
+
+    private suspend fun refreshMonthlyChartDataInternal(monthCount: Int = 6) {
+        _monthlyChartData.value = repository.getMonthlyTotalsForLastMonths(
+            DateUtils.lastNMonths(monthCount)
+        )
     }
 
     suspend fun getExpenseById(id: Long): Expense? = repository.getExpenseById(id)
@@ -166,6 +178,8 @@ class ExpenseViewModel(private val repository: ExpenseRepository) : ViewModel() 
             }
             if (id == 0L) repository.insertRecurring(recurring)
             else repository.updateRecurring(recurring)
+            repository.processDueRecurringExpenses()
+            refreshMonthlyChartDataInternal()
         }
     }
 
@@ -180,7 +194,24 @@ class ExpenseViewModel(private val repository: ExpenseRepository) : ViewModel() 
     }
 
     fun processRecurringNow() {
-        viewModelScope.launch { repository.processDueRecurringExpenses() }
+        viewModelScope.launch {
+            repository.processDueRecurringExpenses()
+            refreshMonthlyChartDataInternal()
+        }
+    }
+
+    fun saveUserSettings(
+        name: String,
+        email: String,
+        currency: SupportedCurrency
+    ) {
+        userSettingsRepository.saveSettings(
+            UserSettings(
+                name = name,
+                email = email,
+                currency = currency
+            )
+        )
     }
 
     fun exportCsv(context: Context) {
@@ -223,11 +254,14 @@ class ExpenseViewModel(private val repository: ExpenseRepository) : ViewModel() 
     }
 }
 
-class ExpenseViewModelFactory(private val repository: ExpenseRepository) : ViewModelProvider.Factory {
+class ExpenseViewModelFactory(
+    private val repository: ExpenseRepository,
+    private val userSettingsRepository: UserSettingsRepository
+) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ExpenseViewModel::class.java)) {
-            return ExpenseViewModel(repository) as T
+            return ExpenseViewModel(repository, userSettingsRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

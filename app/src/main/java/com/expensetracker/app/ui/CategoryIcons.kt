@@ -28,7 +28,7 @@ object CategoryIcons {
     }
 }
 
-fun formatCurrency(amount: Double): String = "$%.2f".format(amount)
+fun formatCurrency(amount: Double, symbol: String = "$"): String = "$symbol%.2f".format(amount)
 
 fun formatDate(timestamp: Long): String {
     val formatter = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())

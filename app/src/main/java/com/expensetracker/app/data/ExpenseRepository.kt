@@ -4,12 +4,16 @@ import com.expensetracker.app.util.DateUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class ExpenseRepository(
     private val expenseDao: ExpenseDao,
     private val budgetDao: BudgetDao,
     private val recurringDao: RecurringExpenseDao
 ) {
+    private val recurringProcessingMutex = Mutex()
+
     val allExpenses: Flow<List<Expense>> = expenseDao.getAllExpenses()
     val totalSpent: Flow<Double?> = expenseDao.getTotalSpent()
     val categoryTotals: Flow<List<CategoryTotal>> = expenseDao.getCategoryTotals()
@@ -72,24 +76,26 @@ class ExpenseRepository(
     suspend fun deleteRecurring(recurring: RecurringExpense) = recurringDao.delete(recurring)
 
     suspend fun processDueRecurringExpenses() {
-        val due = recurringDao.getDueExpenses(DateUtils.endOfTodayMillis())
-        for (recurring in due) {
-            var dueDate = recurring.nextDueDate
-            val endOfToday = DateUtils.endOfTodayMillis()
-            while (dueDate <= endOfToday) {
-                expenseDao.insert(
-                    Expense(
-                        title = recurring.title,
-                        amount = recurring.amount,
-                        category = recurring.category,
-                        date = dueDate,
-                        note = recurring.note,
-                        recurringId = recurring.id
+        recurringProcessingMutex.withLock {
+            val due = recurringDao.getDueExpenses(DateUtils.endOfTodayMillis())
+            for (recurring in due) {
+                var dueDate = recurring.nextDueDate
+                val endOfToday = DateUtils.endOfTodayMillis()
+                while (dueDate <= endOfToday) {
+                    expenseDao.insert(
+                        Expense(
+                            title = recurring.title,
+                            amount = recurring.amount,
+                            category = recurring.category,
+                            date = dueDate,
+                            note = recurring.note,
+                            recurringId = recurring.id
+                        )
                     )
-                )
-                dueDate = DateUtils.calculateNextDueDate(dueDate, recurring.frequency)
+                    dueDate = DateUtils.calculateNextDueDate(dueDate, recurring.frequency)
+                }
+                recurringDao.update(recurring.copy(nextDueDate = dueDate))
             }
-            recurringDao.update(recurring.copy(nextDueDate = dueDate))
         }
     }
 

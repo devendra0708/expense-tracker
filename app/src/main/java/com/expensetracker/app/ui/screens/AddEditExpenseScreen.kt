@@ -10,6 +10,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -32,6 +35,8 @@ fun AddEditExpenseScreen(
     var showCategoryMenu by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var loaded by remember(expenseId) { mutableStateOf(expenseId == null) }
+    val userSettings by viewModel.userSettings.collectAsState()
+    val currencySymbol = userSettings.currency.symbol
 
     LaunchedEffect(expenseId) {
         if (expenseId != null && expenseId > 0) {
@@ -83,7 +88,10 @@ fun AddEditExpenseScreen(
                 value = title,
                 onValueChange = { title = it },
                 label = { Text("Title") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("expense_title_input")
+                    .semantics { contentDescription = "Expense title" },
                 singleLine = true
             )
 
@@ -95,9 +103,12 @@ fun AddEditExpenseScreen(
                     }
                 },
                 label = { Text("Amount") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("expense_amount_input")
+                    .semantics { contentDescription = "Expense amount" },
                 singleLine = true,
-                prefix = { Text("$") },
+                prefix = { Text(currencySymbol) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
 
@@ -170,7 +181,8 @@ fun AddEditExpenseScreen(
                 enabled = isValid,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
+                    .height(52.dp)
+                    .testTag("save_expense_button"),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(

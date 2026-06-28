@@ -5,14 +5,9 @@ import androidx.room.Room
 import com.expensetracker.app.data.ExpenseDatabase
 import com.expensetracker.app.data.ExpenseRepository
 import com.expensetracker.app.data.MIGRATION_1_2
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import com.expensetracker.app.data.UserSettingsRepository
 
 class ExpenseTrackerApp : Application() {
-    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
     val database: ExpenseDatabase by lazy {
         Room.databaseBuilder(
             applicationContext,
@@ -31,10 +26,7 @@ class ExpenseTrackerApp : Application() {
         )
     }
 
-    override fun onCreate() {
-        super.onCreate()
-        appScope.launch {
-            repository.processDueRecurringExpenses()
-        }
+    val userSettingsRepository: UserSettingsRepository by lazy {
+        UserSettingsRepository(applicationContext)
     }
 }

@@ -29,6 +29,8 @@ fun RecurringScreen(
     onEditRecurring: (Long) -> Unit
 ) {
     val recurring by viewModel.recurringExpenses.collectAsState()
+    val userSettings by viewModel.userSettings.collectAsState()
+    val currencySymbol = userSettings.currency.symbol
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -78,6 +80,7 @@ fun RecurringScreen(
                 items(recurring, key = { it.id }) { item ->
                     RecurringCard(
                         recurring = item,
+                        currencySymbol = currencySymbol,
                         onClick = { onEditRecurring(item.id) },
                         onToggle = { viewModel.toggleRecurringActive(item) },
                         onDelete = { viewModel.deleteRecurring(item) }
@@ -91,6 +94,7 @@ fun RecurringScreen(
 @Composable
 private fun RecurringCard(
     recurring: RecurringExpense,
+    currencySymbol: String,
     onClick: () -> Unit,
     onToggle: () -> Unit,
     onDelete: () -> Unit
@@ -143,7 +147,7 @@ private fun RecurringCard(
                 )
             }
             Text(
-                text = formatCurrency(recurring.amount),
+                text = formatCurrency(recurring.amount, currencySymbol),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold
             )

@@ -21,7 +21,9 @@ fun ChartsScreen(viewModel: ExpenseViewModel) {
     val monthlyCategoryTotals by viewModel.monthlyCategoryTotals.collectAsState()
     val monthlySpent by viewModel.monthlySpent.collectAsState()
     val monthlyChartData by viewModel.monthlyChartData.collectAsState()
+    val userSettings by viewModel.userSettings.collectAsState()
     val (year, month) = selectedMonth
+    val currencySymbol = userSettings.currency.symbol
 
     LaunchedEffect(Unit) {
         viewModel.refreshMonthlyChartData()
@@ -49,7 +51,7 @@ fun ChartsScreen(viewModel: ExpenseViewModel) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = formatCurrency(monthlySpent),
+                    text = formatCurrency(monthlySpent, currencySymbol),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -77,7 +79,10 @@ fun ChartsScreen(viewModel: ExpenseViewModel) {
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                MonthlyBarChart(monthlyTotals = monthlyChartData)
+                MonthlyBarChart(
+                    monthlyTotals = monthlyChartData,
+                    currencySymbol = currencySymbol
+                )
             }
         }
     }

@@ -26,7 +26,9 @@ import com.expensetracker.app.viewmodel.ExpenseViewModel
 fun BudgetScreen(viewModel: ExpenseViewModel) {
     val selectedMonth by viewModel.selectedMonth.collectAsState()
     val budgetStatus by viewModel.budgetStatus.collectAsState()
+    val userSettings by viewModel.userSettings.collectAsState()
     val (year, month) = selectedMonth
+    val currencySymbol = userSettings.currency.symbol
 
     var totalBudgetText by remember(year, month, budgetStatus.monthlyBudget) {
         mutableStateOf(budgetStatus.monthlyBudget?.toString() ?: "")
@@ -72,11 +74,12 @@ fun BudgetScreen(viewModel: ExpenseViewModel) {
                 if (monthlyBudget != null && monthlyBudget > 0) {
                     BudgetProgressBar(
                         spent = budgetStatus.monthlySpent,
-                        budget = monthlyBudget
+                        budget = monthlyBudget,
+                        currencySymbol = currencySymbol
                     )
                 } else {
                     Text(
-                        text = "Spent this month: ${formatCurrency(budgetStatus.monthlySpent)}",
+                        text = "Spent this month: ${formatCurrency(budgetStatus.monthlySpent, currencySymbol)}",
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Text(
@@ -106,7 +109,7 @@ fun BudgetScreen(viewModel: ExpenseViewModel) {
                         }
                     },
                     label = { Text("Monthly limit") },
-                    prefix = { Text("$") },
+                    prefix = { Text(currencySymbol) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
@@ -155,9 +158,9 @@ fun BudgetScreen(viewModel: ExpenseViewModel) {
                             )
                             Text(
                                 text = if (budget != null) {
-                                    "${formatCurrency(spent)} / ${formatCurrency(budget)}"
+                                    "${formatCurrency(spent, currencySymbol)} / ${formatCurrency(budget, currencySymbol)}"
                                 } else {
-                                    formatCurrency(spent)
+                                    formatCurrency(spent, currencySymbol)
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (budget != null && spent > budget) {
@@ -177,7 +180,7 @@ fun BudgetScreen(viewModel: ExpenseViewModel) {
                                 }
                             },
                             label = { Text("Budget for ${category.label}") },
-                            prefix = { Text("$") },
+                            prefix = { Text(currencySymbol) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
