@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,6 +29,7 @@ object Routes {
     const val CHARTS = "charts"
     const val BUDGET = "budget"
     const val RECURRING = "recurring"
+    const val PROFILE = "profile"
     const val ADD_EXPENSE = "add_expense"
     const val EDIT_EXPENSE = "edit_expense/{expenseId}"
     const val ADD_RECURRING = "add_recurring"
@@ -45,14 +47,15 @@ private enum class BottomTab(
     HOME(Routes.HOME, "Home", Icons.Default.Home),
     CHARTS(Routes.CHARTS, "Charts", Icons.Default.BarChart),
     BUDGET(Routes.BUDGET, "Budget", Icons.Default.AccountBalanceWallet),
-    RECURRING(Routes.RECURRING, "Recurring", Icons.Default.Repeat)
+    RECURRING(Routes.RECURRING, "Recurring", Icons.Default.Repeat),
+    PROFILE(Routes.PROFILE, "Profile", Icons.Default.Person)
 }
 
 @Composable
 fun ExpenseTrackerNavHost(app: ExpenseTrackerApp) {
     val navController = rememberNavController()
     val viewModel: ExpenseViewModel = viewModel(
-        factory = ExpenseViewModelFactory(app.repository)
+        factory = ExpenseViewModelFactory(app.repository, app.userSettingsRepository)
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -107,6 +110,9 @@ fun ExpenseTrackerNavHost(app: ExpenseTrackerApp) {
                     onAddRecurring = { navController.navigate(Routes.ADD_RECURRING) },
                     onEditRecurring = { id -> navController.navigate(Routes.editRecurring(id)) }
                 )
+            }
+            composable(Routes.PROFILE) {
+                ProfileScreen(viewModel = viewModel)
             }
             composable(Routes.ADD_EXPENSE) {
                 AddEditExpenseScreen(

@@ -10,6 +10,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -37,6 +40,8 @@ fun AddEditRecurringScreen(
     var showFrequencyMenu by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var loaded by remember(recurringId) { mutableStateOf(recurringId == null) }
+    val userSettings by viewModel.userSettings.collectAsState()
+    val currencySymbol = userSettings.currency.symbol
 
     LaunchedEffect(recurringId) {
         if (recurringId != null && recurringId > 0) {
@@ -90,7 +95,10 @@ fun AddEditRecurringScreen(
                 value = title,
                 onValueChange = { title = it },
                 label = { Text("Title") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("recurring_title_input")
+                    .semantics { contentDescription = "Recurring title" },
                 singleLine = true,
                 placeholder = { Text("e.g. Netflix, Rent") }
             )
@@ -103,9 +111,12 @@ fun AddEditRecurringScreen(
                     }
                 },
                 label = { Text("Amount") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("recurring_amount_input")
+                    .semantics { contentDescription = "Recurring amount" },
                 singleLine = true,
-                prefix = { Text("$") },
+                prefix = { Text(currencySymbol) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
 
@@ -217,7 +228,8 @@ fun AddEditRecurringScreen(
                 enabled = isValid,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
+                    .height(52.dp)
+                    .testTag("save_recurring_button"),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(

@@ -97,7 +97,8 @@ fun CategoryPieChart(
 @Composable
 fun MonthlyBarChart(
     monthlyTotals: List<MonthlyTotal>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currencySymbol: String = "$"
 ) {
     if (monthlyTotals.all { it.total <= 0 }) {
         Box(
@@ -162,7 +163,7 @@ fun MonthlyBarChart(
         ) {
             monthlyTotals.forEach { item ->
                 Text(
-                    text = formatCurrency(item.total),
+                    text = formatCurrency(item.total, currencySymbol),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f)
@@ -176,7 +177,8 @@ fun MonthlyBarChart(
 fun BudgetProgressBar(
     spent: Double,
     budget: Double,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currencySymbol: String = "$"
 ) {
     val progress = if (budget > 0) (spent / budget).coerceIn(0.0, 1.0).toFloat() else 0f
     val overBudget = budget > 0 && spent > budget
@@ -192,13 +194,13 @@ fun BudgetProgressBar(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = formatCurrency(spent),
+                text = formatCurrency(spent, currencySymbol),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = if (overBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "of ${formatCurrency(budget)}",
+                text = "of ${formatCurrency(budget, currencySymbol)}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -215,14 +217,14 @@ fun BudgetProgressBar(
         if (overBudget) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Over budget by ${formatCurrency(spent - budget)}",
+                text = "Over budget by ${formatCurrency(spent - budget, currencySymbol)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error
             )
         } else if (budget > 0) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "${formatCurrency(budget - spent)} remaining",
+                text = "${formatCurrency(budget - spent, currencySymbol)} remaining",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
